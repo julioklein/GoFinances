@@ -12,6 +12,11 @@ interface CreateTransactionDTO {
   type: 'income' | 'outcome';
 }
 
+interface GroupedByType {
+  income: number[];
+  outcome: number[];
+}
+
 class TransactionsRepository {
   private transactions: Transaction[];
 
@@ -20,11 +25,31 @@ class TransactionsRepository {
   }
 
   public all(): Transaction[] {
-    // TODO
+    return this.transactions;
   }
 
   public getBalance(): Balance {
-    // TODO
+    const grouped: GroupedByType = { income: [0], outcome: [0] };
+
+    const groupedByType = this.transactions.reduce((accum, curr) => {
+      accum[curr.type].push(curr.value);
+      return accum;
+    }, grouped);
+
+    const income: number = groupedByType.income.reduce(
+      (acc, curr) => acc + curr,
+    );
+    const outcome: number = groupedByType.outcome.reduce(
+      (acc, curr) => acc + curr,
+    );
+
+    const balance: Balance = {
+      income,
+      outcome,
+      total: income - outcome,
+    };
+
+    return balance;
   }
 
   public create({ title, value, type }: CreateTransactionDTO): Transaction {
