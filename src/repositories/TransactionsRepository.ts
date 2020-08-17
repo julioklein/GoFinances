@@ -12,11 +12,6 @@ interface CreateTransactionDTO {
   type: 'income' | 'outcome';
 }
 
-interface GroupedByType {
-  income: number[];
-  outcome: number[];
-}
-
 class TransactionsRepository {
   private transactions: Transaction[];
 
@@ -29,27 +24,31 @@ class TransactionsRepository {
   }
 
   public getBalance(): Balance {
-    const grouped: GroupedByType = { income: [0], outcome: [0] };
+    const { income, outcome } = this.transactions.reduce(
+      (accumulator: Balance, transaction: Transaction) => {
+        switch (transaction.type) {
+          case 'income':
+            accumulator.income += transaction.value;
+            break;
+          case 'outcome':
+            accumulator.outcome += transaction.value;
+            break;
+          default:
+            break;
+        }
 
-    const groupedByType = this.transactions.reduce((accum, curr) => {
-      accum[curr.type].push(curr.value);
-      return accum;
-    }, grouped);
-
-    const income: number = groupedByType.income.reduce(
-      (acc, curr) => acc + curr,
+        return accumulator;
+      },
+      {
+        income: 0,
+        outcome: 0,
+        total: 0,
+      },
     );
-    const outcome: number = groupedByType.outcome.reduce(
-      (acc, curr) => acc + curr,
-    );
 
-    const balance: Balance = {
-      income,
-      outcome,
-      total: income - outcome,
-    };
+    const total = income - outcome;
 
-    return balance;
+    return { income, outcome, total };
   }
 
   public create({ title, value, type }: CreateTransactionDTO): Transaction {
